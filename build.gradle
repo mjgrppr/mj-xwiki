@@ -1,0 +1,85 @@
+/*
+ * See the NOTICE file distributed with this work for additional
+ * information regarding copyright ownership.
+ *
+ * This is free software; you can redistribute it and/or modify it
+ * under the terms of the GNU Lesser General Public License as
+ * published by the Free Software Foundation; either version 2.1 of
+ * the License, or (at your option) any later version.
+ *
+ * This software is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
+ * Lesser General Public License for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public
+ * License along with this software; if not, write to the Free
+ * Software Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA
+ * 02110-1301 USA, or see the FSF site: http://www.fsf.org.
+ */
+import org.apache.tools.ant.filters.ReplaceTokens
+
+// Run this Gradle build with 'gradle' to generate the various versions and variants from the template directory.
+// Whenever a new version of XWiki is out, update this file to update the token values, run gradle and commit the
+// result.
+//
+// Note: As a consequence only update the template files and never the generated files!
+
+defaultTasks 'generate'
+
+def variants = ['mysql-tomcat', 'postgres-tomcat']
+
+// Note: To compute the sha256, download the XWiki WAR and issue:
+// - Unix: sha256sum <binary name>
+// - Mac: shasum --algorithm 256 <binary name>
+
+def tokens = [
+    '11': [
+        xwikiVersion: '11.10.12',
+        xwikiSha256: '472d7bb0d1ff8a7c3a5addf69e5c7b844edaa631d6df8e7b86d42c6b32cd3368'
+    ],
+    '12': [
+        xwikiVersion: '12.10',
+        xwikiSha256: 'd86ad5b58697ef35a968165798de539615bc27f9f3cc7644528128e51e62b4c8'
+    ]
+]
+
+task generate() {
+    doLast {
+        // Copy the template for all versions and variants
+        tokens.keySet().each() { version ->
+            variants.each() { variant ->
+                // Extract the db type and add it as a token
+                def (db, servlet) = variant.tokenize('-')
+                tokens[version].'db' = db
+                // Copy common template files, evaluating groovy in them
+                copy {
+                    from 'template'
+                    into "${version}/${variant}"
+                    include '.env'
+                    include 'Dockerfile'
+                    include 'docker-compose.yml'
+                    include 'xwiki/*'
+                    expand(tokens[version])
+                    filteringCharset = 'UTF-8'
+                }
+                // Copy DB-specific template files, evaluating groovy in them
+                copy {
+                    from 'template'
+                    into "${version}/${variant}"
+                    include "${db}/*"
+                    expand(tokens[version])
+                    filteringCharset = 'UTF-8'
+                }
+                // Copy Servlet-specific template files, evaluating groovy in them
+                copy {
+                    from 'template'
+                    into "${version}/${variant}"
+                    include "${servlet}/*"
+                    expand(tokens[version])
+                    filteringCharset = 'UTF-8'
+                }
+            }
+        }
+    }
+}
