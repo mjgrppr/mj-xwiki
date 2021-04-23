@@ -1,0 +1,27 @@
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: db-netpol
+spec:
+  ingress: 
+    -
+      from: 
+        -
+          namespaceSelector:
+            matchLabels:
+              name: mj-xwiki
+        -
+           #pod que estamos dando paso
+           podSelector:
+            matchLabels:
+              app: xwiki-label
+      ports:
+        -
+          port: 3306
+          protocol: TCP
+  #pod que estamos protegiendo
+  podSelector: 
+    matchLabels: 
+      app: db-label
+  policyTypes:
+    - Ingress
