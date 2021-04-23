@@ -20,9 +20,19 @@ spec:
             - containerPort: 3306
           volumeMounts:
             -
+              mountPath: /docker-entrypoint-initdb.d
+              name: db-init-volume
+            -
               mountPath: /var/lib/mysql
               name: db-volume
       volumes:
+        -
+          name: db-init-volume
+          # nfs:  --> para leer de un sistema de fichero nfs remoto,pero para archivos pequeños de menos de un mega, usamos ConfigMap 
+          configMap: 
+            # en defautlmode ponemos los permisos, sólo lectura al usuario 0400 o 0440 si hay que dar permisos también al grupo
+            defaultMode: 0400
+            name: db-init-cm
         -
           name: db-volume
           persistentVolumeClaim: 
