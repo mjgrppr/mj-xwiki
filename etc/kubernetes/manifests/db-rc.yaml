@@ -1,0 +1,95 @@
+apiVersion: apps/v1
+kind: ReplicationController
+metadata:
+  name: db-rc
+spec:
+  replicas: 1
+  selector:
+    app: db-label
+  template:
+    metadata:
+      labels:
+        app: db-label
+    spec:
+      containers:
+        -
+          args:
+            - $(MYSQL_ARG_1)
+            - $(MYSQL_ARG_2)
+            - $(MYSQL_ARG_3)
+            - $(MYSQL_ARG_4)
+          env: 
+            -
+              name: MYSQL_ARG_1
+              valueFrom: 
+                configMapKeyRef:
+                  key: DB_ARG_1
+                  name: db-args-cm
+            -
+              name: MYSQL_ARG_2
+              valueFrom: 
+                configMapKeyRef:
+                  key: DB_ARG_2
+                  name: db-args-cm
+            -
+              name: MYSQL_ARG_3
+              valueFrom: 
+                configMapKeyRef:
+                  key: DB_ARG_3
+                  name: db-args-cm
+            -
+              name: MYSQL_ARG_4
+              valueFrom: 
+                configMapKeyRef:
+                  key: DB_ARG_4
+                  name: db-args-cm
+            -
+              name: MYSQL_DATABASE 
+              valueFrom: 
+                secretKeyRef:
+                  # key es nombre de la variable que vamos a usar, secret es el nombre del secret
+                  key: DB_DATABASE
+                  name: db-secret
+            -
+              name: MYSQL_PASSWORD 
+              valueFrom: 
+                secretKeyRef:
+                  key: DB_PASSWORD
+                  name: db-secret      
+            -
+              name: MYSQL_USER 
+              valueFrom: 
+                secretKeyRef:
+                  key: DB_USER
+                  name: db-secret      
+             -
+              name: MYSQL_ROOT_PASSWORD 
+              valueFrom: 
+                secretKeyRef:
+                  key: DB_ROOT_PASSWORD
+                  name: db-secret      
+         image: mysql:5.7
+          name: db-container
+          ports:
+            - containerPort: 3306
+          volumeMounts:
+            -
+              mountPath: /docker-entrypoint-initdb.d
+              name: db-init-volume
+            -
+              mountPath: /var/lib/mysql
+              name: db-volume
+      volumes:
+        -
+          name: db-init-volume
+          # nfs:  --> para leer de un sistema de fichero nfs remoto,pero para archivos pequeños de menos de un mega, usamos ConfigMap 
+          configMap: 
+            # en defautlmode ponemos los permisos, sólo lectura al usuario 0400 o 0440 si hay que dar permisos también al grupo
+            defaultMode: 0400
+            name: db-init-cm
+        -
+          name: db-volume
+          persistentVolumeClaim: 
+            claimName: db-pvc
+            readOnly: false
+          
