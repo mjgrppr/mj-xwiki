@@ -1,0 +1,17 @@
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: xwiki-netpol
+spec:
+  ingress: 
+    -
+      ports:
+        -
+          port: 8080
+          protocol: TCP
+  #pod que estamos protegiendo
+  podSelector: 
+    matchLabels: 
+      app: xwiki-label
+  policyTypes:
+    - Ingress
