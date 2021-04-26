@@ -71,7 +71,9 @@ spec:
          image: mysql:5.7
           name: db-container
           ports:
-            - containerPort: 3306
+            - 
+              containerPort: 3306
+              protocol: TCP
           volumeMounts:
             -
               mountPath: /docker-entrypoint-initdb.d
